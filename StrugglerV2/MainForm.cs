@@ -232,6 +232,7 @@ namespace StrugglerV2
             if (_selectedButton == SelectedButton.TargetKey)
             {
                 _preferences.TargetKey = pressedKey;
+                _actuator.TargetButton = pressedKey;
             }
             else if (_selectedButton == SelectedButton.ToggleKey)
             {
