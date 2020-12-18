@@ -36,21 +36,21 @@ namespace StrugglerV2.Preferences
             }
         }
 
-        public Keys ToggleKey { get; set; }
+        public KeyCombination ToggleKey { get; set; }
         public Keys TargetKey { get; set; }
 
         public int PeriodOuterMs { get; set; }
         public int PeriodInnerMs { get; set; }
         public PreferencesContainer()
         {
-            ToggleKey = Keys.Back;
+            ToggleKey = new KeyCombination(Keys.Back, null);
             TargetKey = Keys.Space;
             PeriodOuterMs = 500;
             PeriodInnerMs = 100;
         }
 
         public bool IsNotDefault =>
-            ToggleKey != Keys.Back ||
+            ToggleKey != new KeyCombination(Keys.Back, null) ||
             TargetKey != Keys.Space ||
             PeriodOuterMs != 500 ||
             PeriodInnerMs != 100;
@@ -110,7 +110,7 @@ namespace StrugglerV2.Preferences
                 XmlElement periodInnerElement = (XmlElement) root.GetElementsByTagName("PeriodInnerMs")[0];
                 
                 bool parsingOk = true;
-                parsingOk &= Enum.TryParse(toggleKeyElement.InnerText, out Keys toggleKey);
+                parsingOk &= KeyCombination.TryParse(toggleKeyElement.InnerText, out KeyCombination toggleKey);
                 parsingOk &= Enum.TryParse(targetKeyElement.InnerText, out Keys targetKey);
 
                 parsingOk &= int.TryParse(periodOuterElement.InnerText, out int periodOuter);

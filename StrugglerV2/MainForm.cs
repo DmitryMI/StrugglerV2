@@ -18,10 +18,9 @@ namespace StrugglerV2
     public partial class MainForm : Form
     {
         public const string PreferencesRelativePath = "StrugglerPrefs.xml";
-        private KeyHandler _keyHandler;
         private readonly StrugglerActuator _actuator;
         private readonly PreferencesContainer _preferences;
-
+        private KeyboardHook _keyboardHook;
         #region State
 
         private SelectedButton _selectedButton = SelectedButton.None;
@@ -38,6 +37,7 @@ namespace StrugglerV2
             _preferences = new PreferencesContainer();
             LoadPreferences();
             _actuator = new KeyboardEventActuator(_preferences.TargetKey, _preferences.PeriodOuterMs, _preferences.PeriodInnerMs);
+            _keyboardHook = new KeyboardHook(this, _preferences.ToggleKey);
             UpdateUi();
         }
 
@@ -97,23 +97,33 @@ namespace StrugglerV2
         {
             if (m.Msg == Constants.WM_HOTKEY_MSG_ID)
                 HandleHotKey();
+            
             base.WndProc(ref m);
         }
 
         private void StartListeningButton_Click(object sender, EventArgs e)
         {
             ClearStatus();
+            _actuator.StopActuator();
             if (_listeningEnabled)
             {
-                _keyHandler.Unregister();
+                _keyboardHook.Unregister();
                 _listeningEnabled = false;
             }
             else
             {
-                _keyHandler = new KeyHandler(_preferences.ToggleKey, this);
-                _keyHandler.Register();
-                _actuator.StopActuator();
-                _listeningEnabled = true;
+                _keyboardHook.Unregister();
+                _keyboardHook.Key = _preferences.ToggleKey.Key;
+                _keyboardHook.Modifiers = _preferences.ToggleKey.Modifiers;
+                bool hookRegistered = _keyboardHook.Register();
+                if (!hookRegistered)
+                {
+                    PrintErrorToStatus("Unable to set keyboard hook. Try another key combination");
+                }
+                else
+                {
+                    _listeningEnabled = true;
+                }
             }
 
             UpdateIndicators();
@@ -225,26 +235,6 @@ namespace StrugglerV2
 
             UpdateSelectors();
         }
-        private void MainForm_KeyDown(object sender, KeyEventArgs e)
-        {
-            Keys pressedKey = e.KeyCode;
-
-            if (_selectedButton == SelectedButton.TargetKey)
-            {
-                _preferences.TargetKey = pressedKey;
-                _actuator.TargetButton = pressedKey;
-            }
-            else if (_selectedButton == SelectedButton.ToggleKey)
-            {
-                _preferences.ToggleKey = pressedKey;
-            }
-
-            _selectedButton = SelectedButton.None;
-
-
-            UpdateSelectors();
-            UpdateKeyLabels();
-        }
 
         private void SavePreferences()
         {
@@ -267,6 +257,59 @@ namespace StrugglerV2
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
             SavePreferences();
+        }
+
+        private void MainForm_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (_selectedButton != SelectedButton.None)
+            {
+                _selectedButton = SelectedButton.None;
+
+                UpdateSelectors();
+                UpdateKeyLabels();
+            }
+        }
+        private void MainForm_KeyDown(object sender, KeyEventArgs e)
+        {
+            Keys pressedKey = e.KeyCode;
+            Keys modifierFlags = e.Modifiers;
+            List<Keys> modifierList = new List<Keys>();
+            if (((int)modifierFlags & (int)Keys.Shift) != 0)
+            {
+                modifierList.Add(Keys.Shift);
+            }
+            if (((int)modifierFlags & (int)Keys.Control) != 0)
+            {
+                modifierList.Add(Keys.Control);
+            }
+            if (((int)modifierFlags & (int)Keys.Alt) != 0)
+            {
+                modifierList.Add(Keys.Alt);
+            }
+            if (((int)modifierFlags & (int)Keys.LWin) != 0)
+            {
+                modifierList.Add(Keys.LWin);
+            }
+            if (((int)modifierFlags & (int)Keys.RWin) != 0)
+            {
+                modifierList.Add(Keys.RWin);
+            }
+
+            if (_selectedButton == SelectedButton.TargetKey)
+            {
+                _preferences.TargetKey = pressedKey;
+                _actuator.TargetButton = pressedKey;
+            }
+            else if (_selectedButton == SelectedButton.ToggleKey)
+            {
+                _preferences.ToggleKey = new KeyCombination(pressedKey, modifierList.ToArray());
+            }
+
+            //_selectedButton = SelectedButton.None;
+
+
+            //UpdateSelectors();
+            //UpdateKeyLabels();
         }
     }
 }

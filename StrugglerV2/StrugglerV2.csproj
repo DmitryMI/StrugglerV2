@@ -47,7 +47,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="KeyboardMonitoring\Constants.cs" />
-    <Compile Include="KeyboardMonitoring\KeyHandler.cs" />
+    <Compile Include="KeyboardMonitoring\KeyboardHook.cs" />
+    <Compile Include="KeyboardMonitoring\KeyboardHookSettler.cs" />
+    <Compile Include="KeyboardMonitoring\KeyHookMustBeUnregisteredException.cs" />
+    <Compile Include="KeyboardMonitoring\KeyModifierNotSupportedException.cs" />
+    <Compile Include="KeyboardMonitoring\KeyModifiers.cs" />
+    <Compile Include="KeyCombination.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
